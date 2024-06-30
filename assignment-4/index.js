@@ -1,7 +1,9 @@
+require('dotenv').config();
+console.log(process.env)
 const express = require('express');
 const app = express ();
 const PORT = 8000;
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 
 // Start the server
 app.listen(PORT, () => {
@@ -19,7 +21,7 @@ const pool = mysql.createPool({
 });
 
 
-// a get request to return all the entries from the classroom_pets table, including a http response code and error handling
+// a get request to return all the entries from the classroom_pets table using the promise version, including a http response code and error handling
 app.get('/Classroom_pets', (req, res) =>{
     pool.query('SELECT * FROM Classroom_pets', (err, results) => {
        if (err) {
@@ -30,6 +32,18 @@ app.get('/Classroom_pets', (req, res) =>{
        res.json(results);
     });
 });
+
+// example of a get request using async await, and a try catch for the error handling
+app.get('/Classroom_pets', async (req, res) => {
+    try {
+    const [result] = await pool.query('SELECT pet_type, childs_name FROM Classroom_pets WHERE pet_type === dog')
+    console.log(result)
+    res.json(result)}
+    catch (err){
+    res.status(500).json({message: 'There is a problem'})
+    }
+})
+
 
 // example of a post request using req,res
 app.post('/Classroom_pets', (req, res) => {
