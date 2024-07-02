@@ -1,5 +1,4 @@
 require('dotenv').config();
-console.log(process.env)
 const express = require('express');
 const app = express ();
 const PORT = 8000;
@@ -20,33 +19,26 @@ const pool = mysql.createPool({
     database: 'pets'
 });
 
-
-// a get request to return all the entries from the classroom_pets table using the promise version, including a http response code and error handling
-app.get('/Classroom_pets', (req, res) =>{
-    pool.query('SELECT * FROM Classroom_pets', (err, results) => {
-       if (err) {
-          console.error(err);
-          return res.status(500).json({error: 'Unable to get information'}); 
-       } 
-       console.log('Classroom pets', results);
-       res.json(results);
-    });
+// root handler and message to show on localhost
+app.get('/', (req, res) => {
+    res.send('Welcome to the Classroom Pets API!'); 
 });
 
-// example of a get request using async await, and a try catch for the error handling
+// // a get request to return all the entries from the classroom_pets table using async await and error handling with a http response
 app.get('/Classroom_pets', async (req, res) => {
     try {
-    const [result] = await pool.query('SELECT pet_type, childs_name FROM Classroom_pets WHERE pet_type === dog')
-    console.log(result)
-    res.json(result)}
-    catch (err){
-    res.status(500).json({message: 'There is a problem'})
-    }
-})
+    const [results] = await pool.query('SELECT * FROM Classroom_pets');
+    res.json(results);
+}
+catch (err) {
+    console.error('Error retrieving pets data', err);
+    res.status(500).json({message: 'Error retrieving data'});
+}})
+
 
 
 // example of a post request using req,res
-app.post('/Classroom_pets', (req, res) => {
+app.post('/Classroom_pets', async (req, res) => {
     const {pet_id, childs_name, pet_type, pet_name, pet_age} = req.body;
 
     if (typeof pet_id !== 'number' || !childs_name || !pet_type || !pet_name || typeof pet_age !== 'number') {
@@ -54,12 +46,32 @@ app.post('/Classroom_pets', (req, res) => {
     }
 
     const query = 'INSERT INTO Classroom_pets (pet_id, childs_name, pet_type, pet_name, pet_age) VALUES (?, ?, ?, ?, ?)';
-    pool.query(query, [pet_id, childs_name, pet_type, pet_name, pet_age], (err, results) => {
-        if (err) {
-            console.error('Database insertion failed:', err);
-            return res.status(500).json({ error: 'Database insertion failed' });
+
+    try {
+        const [results] = await pool.query(query, [pet_id, childs_name, pet_type, pet_name, pet_age]);
+        console.log('New pet data:', results);
+        res.status(201).json({message: 'New pet added', id:results.insertId});
+    } catch (err) {
+        console.error('Data insertion failed', err);
+        res.status(500).json({error: 'Data insertion failed'});
+    }
+});
+
+
+// delete request using async await and try catch
+app.delete('/Classroom_pets/:id', async (req, res) => {
+    const petId = req.params.id;
+
+    try {
+        const [result] = await pool.execute('DELETE FROM Classroom_pets WHERE pet_id = ?', [petId]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Pet not found' });
         }
-        console.log('Insertion results:', results);
-        res.status(201).json({ message: 'New pet added', id: results.insertId });
-    });
+
+        res.json({ message: 'Pet deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting pet:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
 });
