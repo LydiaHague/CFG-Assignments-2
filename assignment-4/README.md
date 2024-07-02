@@ -7,7 +7,8 @@ The creative idea I have used for this assignment is a database that documents a
 
 When you clone my repo you will see that I have created a .env_EXAMPLE file for you to use to fill in your own details. You can copy this file and rename it to .env with your own details in for you to use.
 Then you can
-npm install 
+>npm install 
+
 This should look at all the packages that are on my json and install them all for you.
 Otherwise, the external libraries you will need to install include:
 >npm install express
